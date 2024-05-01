@@ -1,0 +1,17 @@
+.vscode
+env.json
+/.idea
+vendor
+*.csv
+*.log
+error-mysql
+.env
+coverage
+coverage.out
+coverage.html
+static
+.otu
+*.cov
+/.scannerwork
+/ssl
+run*.sh
