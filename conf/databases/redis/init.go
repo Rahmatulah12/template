@@ -31,7 +31,6 @@ func(r *Conf) InitClient() *redis.Client {
 		MaxActiveConns:        r.MaxActiveConns,
 		ConnMaxIdleTime:       time.Duration(r.ConnMaxIdleTime) * time.Second,
 		ConnMaxLifetime:       time.Duration(r.ConnMaxLifetime) * time.Minute,
-		TLSConfig: &tls.Config{InsecureSkipVerify: false},
 		ContextTimeoutEnabled: true,
 	}
 

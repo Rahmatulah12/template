@@ -34,15 +34,15 @@ func NewConn(conf *Conf) *Conf {
 
 	if conf.WriteTimeout == 0 { conf.WriteTimeout = 10 } // seconds
 
-	if conf.MaxActiveConns == 0 { conf.MaxActiveConns = 250 }
+	if conf.MaxActiveConns == 0 { conf.MaxActiveConns = 10 }
 
 	if conf.PoolSize == 0 { conf.PoolSize = conf.MaxActiveConns }
 
 	if conf.PoolTimeout == 0 { conf.PoolTimeout = 10 }
 
-	if conf.MinIdleConns == 0 { conf.MinIdleConns = 25 }
+	if conf.MinIdleConns == 0 { conf.MinIdleConns = 5 }
 
-	if conf.MaxIdleConns == 0 { conf.MaxIdleConns = 50 }
+	if conf.MaxIdleConns == 0 { conf.MaxIdleConns = 10 }
 
 	if conf.ConnMaxIdleTime == 0 { conf.ConnMaxIdleTime = 60 } // seconds
 

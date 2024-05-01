@@ -10,14 +10,14 @@ import (
 )
 
 func NewCircuitBreaker(circuitBreaker *CircuitBreaker) *CircuitBreaker {
-	context.WithTimeout(ctx, time.Duration(10) * time.Second)
 	return circuitBreaker
 }
 
-func (cb *CircuitBreaker) Execute(operation func() error) error {
+func (cb *CircuitBreaker) Execute(cbOpenKey string, cbFailureCountKey string, operation func() error) error {
+	context.WithTimeout(cb.Ctx, time.Duration(10) * time.Second)
 	if cb.IsOpen && time.Since(*cb.LastFailure) > cb.ResetTimeout {
 		cb.IsOpen = false
-		if err := cb.RedisClient.Set(cb.Ctx, cb.CbOpenKey, "false", 0).Err(); err != nil {
+		if err := cb.RedisClient.Set(cb.Ctx, cbOpenKey, "false", 0).Err(); err != nil {
 			msg := fmt.Sprintf("Error updating circuit breaker status in Redis: %v", err.Error())
 			logrus.Error(msg)
 			return fmt.Errorf(msg)
@@ -25,12 +25,13 @@ func (cb *CircuitBreaker) Execute(operation func() error) error {
 	}
 
 	if cb.IsOpen { // Circuit breaker is open
-		return fmt.Errorf("Currently, our system is busy. Please try again in a few moments.")
+		msg := fmt.Sprintf("Currently, our system is busy. Please try again in %.0f seconds.", cb.ResetTimeout.Seconds())
+		return fmt.Errorf(msg)
 	}
 
 	err := operation()
 	if err != nil {
-		if err := cb.RedisClient.Incr(cb.Ctx, cb.CbFailureCountKey).Err(); err != nil {
+		if err := cb.RedisClient.Incr(cb.Ctx, cbFailureCountKey).Err(); err != nil {
 			msg := fmt.Sprintf("Error updating failure count in Redis: %v", err.Error())
 			logrus.Error(msg)
 			return fmt.Errorf(msg)
@@ -39,7 +40,7 @@ func (cb *CircuitBreaker) Execute(operation func() error) error {
 		now := time.Now()
 		cb.LastFailure = &now
 
-		failureCount, err := cb.RedisClient.Get(cb.Ctx, cb.CbFailureCountKey).Int()
+		failureCount, err := cb.RedisClient.Get(cb.Ctx, cbFailureCountKey).Int()
 		if err != nil && err != redis.Nil {
 			msg := fmt.Sprintf("Error getting failure count from Redis: %v", err)
 			logrus.Error(msg)
@@ -48,7 +49,7 @@ func (cb *CircuitBreaker) Execute(operation func() error) error {
 
 		if failureCount >= cb.Threshold {
 			cb.IsOpen = true
-			if err := cb.RedisClient.Set(cb.Ctx, cb.CbOpenKey, "true", 0).Err(); err != nil {
+			if err := cb.RedisClient.Set(cb.Ctx, cbOpenKey, "true", 0).Err(); err != nil {
 				msg := fmt.Sprintf("Error updating circuit breaker status in Redis: %v", err)
 				logrus.Error(msg)
 				return fmt.Errorf(msg)
@@ -57,12 +58,12 @@ func (cb *CircuitBreaker) Execute(operation func() error) error {
 			go func() {
 				time.Sleep(cb.ResetTimeout)
 				cb.IsOpen = false
-				cb.RedisClient.Del(cb.Ctx, cb.CbOpenKey)
-				cb.RedisClient.Del(cb.Ctx, cb.CbFailureCountKey)
+				cb.RedisClient.Del(cb.Ctx, cbOpenKey)
+				cb.RedisClient.Del(cb.Ctx, cbFailureCountKey)
 			}()
 		}
 	} else {
-		if err := cb.RedisClient.Set(cb.Ctx, cb.CbFailureCountKey, "0", 0).Err(); err != nil {
+		if err := cb.RedisClient.Set(cb.Ctx, cbFailureCountKey, "0", 0).Err(); err != nil {
 			msg := fmt.Sprintf("Error resetting failure count in Redis: %v", err)
 			logrus.Error(msg)
 			return fmt.Errorf(msg)

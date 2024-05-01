@@ -23,7 +23,7 @@ func NewApmNewrelicConfig() *newrelicConfig {
 }
 
 func InstanceNewrelic(nr *newrelicConfig) *newrelic.Application {
-	if nr == nil { panic("Failed to connect newrelice. Onvalid credentials") }
+	if nr == nil { panic("Failed to connect newrelic. Invalid credentials") }
 
 	httpTransport := &http.Transport{
 		MaxIdleConns:          50,
