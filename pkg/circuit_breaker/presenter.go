@@ -15,3 +15,7 @@ type CircuitBreaker struct {
 	RedisClient  *redis.Client
 	Ctx          context.Context
 }
+
+type CircuitBreakerInterface interface {
+	Execute(cbOpenKey string, cbFailureCountKey string, operation func() (error, int)) (error, int)
+}

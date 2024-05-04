@@ -3,34 +3,29 @@ package apm
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/newrelic/go-agent/v3/integrations/nrlogrus"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
 
-type newrelicConfig struct {
+type NewrelicConfig struct {
 	AppName    string
 	LicenseKey string
 }
 
-func NewApmNewrelicConfig() *newrelicConfig {
-	if os.Getenv("APP_NAME_NEWRELIC") == "" && os.Getenv("APP_KEY_NEWRELIC") == "" { panic("Failed to connect newrelic, invalid credentials.") }
-	return &newrelicConfig{
-		AppName:    os.Getenv("APP_NAME_NEWRELIC"),
-		LicenseKey: os.Getenv("APP_KEY_NEWRELIC"),
-	}
-}
-
-func InstanceNewrelic(nr *newrelicConfig) *newrelic.Application {
+func InstanceNewrelic(nr *NewrelicConfig) *newrelic.Application {
 	if nr == nil { panic("Failed to connect newrelic. Invalid credentials") }
 
+	if nr.AppName == "" || nr.LicenseKey == "" { panic("Failed to connect newrelic. Invalid credentials") }
+
 	httpTransport := &http.Transport{
-		MaxIdleConns:          50,
+		MaxIdleConns:          150,
 		MaxIdleConnsPerHost:   50,
-		MaxConnsPerHost:       250,
-		IdleConnTimeout:       10,
-		ResponseHeaderTimeout: 10,
+		MaxConnsPerHost:       150,
+		IdleConnTimeout:       60,
+		ResponseHeaderTimeout: 60 * time.Second,
 	}
 
 
